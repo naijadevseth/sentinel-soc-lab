@@ -1,0 +1,10 @@
+// Azure: new role assignment (permissions granted)
+// MITRE ATT&CK: Persistence / Privilege Escalation - T1098 Account Manipulation
+// Granting a role is how access is given out in Azure - and how an attacker
+// gives themselves or a backdoor identity more power.
+// Known benign in this lab: Terraform granting the shutdown Logic App its role.
+AzureActivity
+| where OperationNameValue =~ "MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE"
+| where ActivityStatusValue == "Success"
+| project TimeGenerated, Caller, CallerIpAddress, ResourceGroup,
+          Scope = _ResourceId

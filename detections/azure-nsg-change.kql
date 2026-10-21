@@ -1,0 +1,13 @@
+// Azure: network security group (firewall) changed or rule deleted
+// MITRE ATT&CK: Defense Evasion - T1562.007 Impair Defenses: Disable or Modify Cloud Firewall
+// Attackers open firewall ports to get in or move data out. Any change to an
+// NSG should be traceable to a known person and reason.
+// Known benign in this lab: ./update-ip.sh updating the allowed IP.
+AzureActivity
+| where OperationNameValue in~ (
+    "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE",
+    "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/SECURITYRULES/WRITE",
+    "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/SECURITYRULES/DELETE")
+| where ActivityStatusValue == "Success"
+| project TimeGenerated, Caller, CallerIpAddress, OperationNameValue,
+          ResourceGroup, NsgResourceId = _ResourceId

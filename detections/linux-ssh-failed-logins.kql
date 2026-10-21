@@ -1,0 +1,15 @@
+// Linux: repeated failed SSH logins from one source
+// MITRE ATT&CK: Credential Access - T1110 Brute Force
+// The lab VM only accepts SSH keys, so failures appear as "Invalid user",
+// "Failed password" or "authenticating user ... [preauth]" messages.
+// Fires on 5+ failures from the same IP within the 15-minute window.
+Syslog
+| where ProcessName == "sshd"
+| where SyslogMessage has_any ("Failed password", "Invalid user", "authenticating user")
+| extend SourceIP = extract(@"(\d{1,3}(?:\.\d{1,3}){3})", 1, SyslogMessage)
+| summarize FailedAttempts = count(),
+            FirstAttempt   = min(TimeGenerated),
+            LastAttempt    = max(TimeGenerated),
+            Samples        = make_set(SyslogMessage, 5)
+          by SourceIP, Computer
+| where FailedAttempts >= 5

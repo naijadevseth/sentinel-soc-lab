@@ -1,0 +1,14 @@
+// Windows: possible brute-force logon
+// MITRE ATT&CK: Credential Access - T1110 Brute Force
+// Fires when one source IP fails to log on to the same account 5+ times
+// within the rule's 15-minute window.
+// Triage: SubStatus 0xc000006a = real account, wrong password (more serious);
+//         0xc0000064 = username doesn't exist (spraying / noise).
+SecurityEvent
+| where EventID == 4625
+| summarize FailedAttempts = count(),
+            FirstAttempt   = min(TimeGenerated),
+            LastAttempt    = max(TimeGenerated),
+            SubStatuses    = make_set(SubStatus)
+          by TargetAccount, IpAddress, Computer
+| where FailedAttempts >= 5

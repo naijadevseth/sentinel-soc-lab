@@ -1,0 +1,12 @@
+// Windows: member added to the local Administrators group
+// MITRE ATT&CK: Privilege Escalation / Persistence - T1098 Account Manipulation
+// S-1-5-32-544 is the well-known SID of the built-in Administrators group,
+// so the rule still works if the group is renamed or Windows isn't in English.
+// Triage: who was added (MemberSid), by whom (AddedBy), was it approved?
+SecurityEvent
+| where EventID == 4732
+| where TargetSid == "S-1-5-32-544"
+| project TimeGenerated, Computer,
+          Group     = TargetAccount,
+          MemberSid,
+          AddedBy   = SubjectAccount
