@@ -1,1 +1,3 @@
 subscription_id = "00000000-0000-0000-0000-000000000000"
+my_ip = "203.0.113.10/32"
+alert_email = "you+alerts@example.com"
