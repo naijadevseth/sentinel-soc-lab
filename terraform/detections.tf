@@ -18,6 +18,7 @@ locals {
       description  = "One source failed to log on to the same Windows account 5 or more times in 15 minutes."
       severity     = "Medium"
       period       = "PT15M"
+      suppress     = true # threshold rule: one alert per burst
       tactics      = ["CredentialAccess"]
       techniques   = ["T1110"]
       entities = [
@@ -32,6 +33,7 @@ locals {
       description  = "A new local account was created on a monitored Windows server."
       severity     = "Medium"
       period       = "PT5M"
+      suppress     = false # every single event matters
       tactics      = ["Persistence"]
       techniques   = ["T1136"]
       entities = [
@@ -45,6 +47,7 @@ locals {
       description  = "An account was added to the built-in Administrators group (SID S-1-5-32-544)."
       severity     = "High"
       period       = "PT5M"
+      suppress     = false # every single event matters
       tactics      = ["PrivilegeEscalation", "Persistence"]
       techniques   = ["T1098"]
       entities = [
@@ -59,6 +62,7 @@ locals {
       description  = "The Windows Security log was cleared, which destroys local evidence."
       severity     = "High"
       period       = "PT5M"
+      suppress     = false # every single event matters
       tactics      = ["DefenseEvasion"]
       techniques   = ["T1070"]
       entities = [
@@ -72,6 +76,7 @@ locals {
       description  = "One source IP failed to authenticate over SSH 5 or more times in 15 minutes."
       severity     = "Medium"
       period       = "PT15M"
+      suppress     = true # threshold rule: one alert per burst
       tactics      = ["CredentialAccess"]
       techniques   = ["T1110"]
       entities = [
@@ -85,6 +90,7 @@ locals {
       description  = "A network security group (cloud firewall) or one of its rules was created, changed or deleted."
       severity     = "Medium"
       period       = "PT5M"
+      suppress     = false # every single event matters
       tactics      = ["DefenseEvasion"]
       techniques   = ["T1562"]
       entities = [
@@ -98,6 +104,7 @@ locals {
       description  = "Permissions were granted to an identity by creating an Azure role assignment."
       severity     = "Medium"
       period       = "PT5M"
+      suppress     = false # every single event matters
       tactics      = ["Persistence", "PrivilegeEscalation"]
       techniques   = ["T1098"]
       entities = [
@@ -125,6 +132,13 @@ resource "azurerm_sentinel_alert_rule_scheduled" "detections" {
   query_period      = each.value.period # look back over this window
   trigger_operator  = "GreaterThan"
   trigger_threshold = 0 # any result = alert (thresholds live inside the KQL)
+
+  # Tuning (alert fatigue): threshold rules look back 15 minutes but run every
+  # 5, so one burst of failures was alerting 3 times. After firing, suppress
+  # the rule for 15 minutes so one burst = one alert. Single-event rules are
+  # NOT suppressed: a second account created 2 minutes later must still alert.
+  suppression_enabled  = each.value.suppress
+  suppression_duration = "PT15M"
 
   tactics    = each.value.tactics
   techniques = each.value.techniques
