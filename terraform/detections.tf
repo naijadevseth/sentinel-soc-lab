@@ -89,7 +89,7 @@ locals {
       display_name = "Azure: network security group changed"
       description  = "A network security group (cloud firewall) or one of its rules was created, changed or deleted."
       severity     = "Medium"
-      period       = "PT5M"
+      period       = "PT1H" # Activity log arrives late; KQL dedupes by ingestion time
       suppress     = false # every single event matters
       tactics      = ["DefenseEvasion"]
       techniques   = ["T1562"]
@@ -101,9 +101,9 @@ locals {
 
     "azure-role-assignment" = {
       display_name = "Azure: new role assignment"
-      description  = "Permissions were granted to an identity by creating an Azure role assignment."
+      description  = "Permissions were granted (or an attempt was made to grant them) by creating an Azure role assignment."
       severity     = "Medium"
-      period       = "PT5M"
+      period       = "PT1H" # Activity log arrives late; KQL dedupes by ingestion time
       suppress     = false # every single event matters
       tactics      = ["Persistence", "PrivilegeEscalation"]
       techniques   = ["T1098"]

@@ -2,12 +2,16 @@
 // MITRE ATT&CK: Defense Evasion - T1562.007 Impair Defenses: Disable or Modify Cloud Firewall
 // Attackers open firewall ports to get in or move data out. Any change to an
 // NSG should be traceable to a known person and reason.
-// Known benign in this lab: ./update-ip.sh updating the allowed IP.
+//
+// Late-arriving data: same pattern as azure-role-assignment - look back
+// 1 hour, but only keep rows ingested since the last 5-minute run.
+// Known benign in this lab: updating the allowed IP after a VPN change.
 AzureActivity
+| where ingestion_time() > ago(5m)
 | where OperationNameValue in~ (
     "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/WRITE",
     "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/SECURITYRULES/WRITE",
     "MICROSOFT.NETWORK/NETWORKSECURITYGROUPS/SECURITYRULES/DELETE")
-| where ActivityStatusValue == "Success"
+| where ActivityStatusValue in ("Success", "Failure")
 | project TimeGenerated, Caller, CallerIpAddress, OperationNameValue,
-          ResourceGroup, NsgResourceId = _ResourceId
+          ActivityStatusValue, ResourceGroup, NsgResourceId = _ResourceId

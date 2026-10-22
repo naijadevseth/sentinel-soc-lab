@@ -1,10 +1,18 @@
-// Azure: new role assignment (permissions granted)
+// Azure: role assignment created or attempted (permissions granted)
 // MITRE ATT&CK: Persistence / Privilege Escalation - T1098 Account Manipulation
 // Granting a role is how access is given out in Azure - and how an attacker
 // gives themselves or a backdoor identity more power.
+// Failed attempts are included on purpose: someone TRYING to grant
+// permissions they aren't allowed to grant is worth a look too.
+//
+// Late-arriving data: the Azure Activity log can reach Sentinel 5-15+ minutes
+// after the event. The rule looks back 1 hour (query period) but only keeps
+// rows that ARRIVED since the last 5-minute run, so each event alerts once,
+// however late it lands. ("Start" rows are skipped: they're the same action.)
 // Known benign in this lab: Terraform granting the shutdown Logic App its role.
 AzureActivity
+| where ingestion_time() > ago(5m)
 | where OperationNameValue =~ "MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE"
-| where ActivityStatusValue == "Success"
-| project TimeGenerated, Caller, CallerIpAddress, ResourceGroup,
-          Scope = _ResourceId
+| where ActivityStatusValue in ("Success", "Failure")
+| project TimeGenerated, Caller, CallerIpAddress, ActivityStatusValue,
+          ResourceGroup, Scope = _ResourceId, CorrelationId
