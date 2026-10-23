@@ -3,7 +3,12 @@
 // S-1-5-32-544 is the well-known SID of the built-in Administrators group,
 // so the rule still works if the group is renamed or Windows isn't in English.
 // Triage: who was added (MemberSid), by whom (AddedBy), was it approved?
+//
+// Late-arriving data: agents can deliver events 10+ minutes late (e.g. right
+// after a VM boots). The rule looks back 1 hour but only keeps rows that
+// ARRIVED since the last 5-minute run, so each event alerts exactly once.
 SecurityEvent
+| where ingestion_time() > ago(5m)
 | where EventID == 4732
 | where TargetSid == "S-1-5-32-544"
 | project TimeGenerated, Computer,

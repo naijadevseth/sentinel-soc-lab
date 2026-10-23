@@ -3,6 +3,11 @@
 // Clearing the Security log destroys evidence. Legitimate reasons are rare,
 // so this is high severity. The logs already sent to Sentinel survive - which
 // is exactly why central log collection matters.
+//
+// Late-arriving data: agents can deliver events 10+ minutes late (e.g. right
+// after a VM boots). The rule looks back 1 hour but only keeps rows that
+// ARRIVED since the last 5-minute run, so each event alerts exactly once.
 SecurityEvent
+| where ingestion_time() > ago(5m)
 | where EventID == 1102
 | project TimeGenerated, Computer, Account, Activity

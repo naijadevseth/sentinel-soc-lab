@@ -32,7 +32,7 @@ locals {
       display_name = "Windows: new local user account created"
       description  = "A new local account was created on a monitored Windows server."
       severity     = "Medium"
-      period       = "PT5M"
+      period       = "PT1H" # agents can deliver late; KQL dedupes by ingestion time
       suppress     = false # every single event matters
       tactics      = ["Persistence"]
       techniques   = ["T1136"]
@@ -46,7 +46,7 @@ locals {
       display_name = "Windows: member added to local Administrators"
       description  = "An account was added to the built-in Administrators group (SID S-1-5-32-544)."
       severity     = "High"
-      period       = "PT5M"
+      period       = "PT1H" # agents can deliver late; KQL dedupes by ingestion time
       suppress     = false # every single event matters
       tactics      = ["PrivilegeEscalation", "Persistence"]
       techniques   = ["T1098"]
@@ -61,7 +61,7 @@ locals {
       display_name = "Windows: Security event log cleared"
       description  = "The Windows Security log was cleared, which destroys local evidence."
       severity     = "High"
-      period       = "PT5M"
+      period       = "PT1H" # agents can deliver late; KQL dedupes by ingestion time
       suppress     = false # every single event matters
       tactics      = ["DefenseEvasion"]
       techniques   = ["T1070"]

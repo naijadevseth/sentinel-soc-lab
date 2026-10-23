@@ -41,6 +41,13 @@ Every detection rule in `detections/` was tested by deliberately performing the 
 - Match `Success` **and** `Failure`. A failed attempt to grant permissions or change a firewall is itself worth reviewing.
 - Look back **1 hour**, but keep only rows that **arrived** since the last run: `where ingestion_time() > ago(5m)`. Each event alerts exactly once, however late it is ingested.
 
+### 3. Late-arriving Windows events
+**Finding:** a retest of `win-security-log-cleared` on 23 October did not alert. The 1102 event was in Sentinel, but measuring with `ingestion_time()` showed it was generated at 11:00 and **arrived at 11:13, 13 minutes late**. The log had been cleared straight after the VM booted, while the Azure Monitor Agent was still starting up and buffering events. By the time the event arrived, every 5-minute rule window covering 11:00 had already run.
+
+**Fix:** applied the same pattern as the Azure rules to all three single-event Windows rules (`win-new-local-user`, `win-admin-group-add`, `win-security-log-cleared`): look back 1 hour, keep only rows ingested since the last run.
+
+**Remaining risk:** the two threshold rules (`win-brute-force`, `linux-ssh-failed-logins`) still count events by when they happened, so a heavily delayed burst could be split or missed. Accepted for the lab; in production these would use a longer window or ingestion-time bucketing.
+
 ---
 
 ## Known detection gap: Azure role assignments
@@ -64,6 +71,6 @@ The rule logic is correct, but it cannot alert on events that never reach the lo
 ## Lessons
 
 1. **Test every rule.** Two of seven rules had problems (duplicates, a false negative) that were only visible through testing.
-2. **When a rule doesn't fire, check each stage in order:** did the event happen, did the source log it, did it reach Sentinel, did the rule run? Here the evidence pointed to the source.
+2. **When a rule doesn't fire, check each stage in order:** did the event happen, did the source log it, did it reach Sentinel, did the rule run? Measuring `ingestion_time()` against `TimeGenerated` turned a guess into evidence twice.
 3. **Detect results as well as actions.** Logs of changes can be incomplete; checking the current state against a baseline covers the gap.
 4. **Document gaps honestly.** A known, explained gap with a mitigation plan is more useful to a security team than a rule that is assumed to work.

@@ -3,7 +3,12 @@
 // Attackers create accounts so they can get back in later. On a server where
 // accounts rarely change, every new account deserves a look.
 // Triage: who created it (CreatedBy), was it a planned change?
+//
+// Late-arriving data: agents can deliver events 10+ minutes late (e.g. right
+// after a VM boots). The rule looks back 1 hour but only keeps rows that
+// ARRIVED since the last 5-minute run, so each event alerts exactly once.
 SecurityEvent
+| where ingestion_time() > ago(5m)
 | where EventID == 4720
 | project TimeGenerated, Computer,
           CreatedAccount = TargetAccount,
